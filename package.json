@@ -1,1 +1,10 @@
-{"name": "forma-calculadora-cientifica", "version": "1.0.0", "private": true, "type": "module", "scripts": {"test": "node --test engine.test.js", "start": "python3 -m http.server 8080"}}
+{
+  "name": "forma-calculadora-cientifica",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test *.test.js",
+    "start": "python3 -m http.server 8080"
+  }
+}

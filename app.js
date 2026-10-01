@@ -1,22 +1,335 @@
-import {calculate} from './engine.js';
-const $=id=>document.getElementById(id),input=$('expression');
-let mode='DEG',ans=0,memory=0,hasMemory=false,second=false,history=[];
-try{history=JSON.parse(localStorage.getItem('forma-history')||'[]').filter(x=>typeof x.expression==='string'&&Number.isFinite(x.value)).slice(0,50);document.body.classList.toggle('dark',localStorage.getItem('forma-theme')==='dark');}catch{history=[];}
-const format=n=>Number(n.toPrecision(12)).toLocaleString('pt-BR',{maximumSignificantDigits:12,useGrouping:false});
-const save=()=>{try{localStorage.setItem('forma-history',JSON.stringify(history));}catch{}};
-function evaluate(){return calculate(input.value,{mode,ans,memory});}
-function preview(){try{$('result').textContent=format(evaluate());$('status').textContent='Prévia do resultado';$('status').className='';}catch{$('result').textContent=input.value?'—':'0';$('status').textContent=input.value?'Continue sua expressão':'Digite uma expressão para começar';$('status').className='';}}
-function insert(text){const start=input.selectionStart,end=input.selectionEnd;input.setRangeText(text,start,end,'end');input.focus();preview();}
-function commit(){try{const expression=input.value,value=evaluate();ans=value;$('result').textContent=format(value);$('status').textContent='Resultado calculado';$('status').className='';history.unshift({expression,value,mode,time:new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})});history=history.slice(0,50);save();renderHistory();}catch(e){$('status').textContent=e.message;$('status').className='error';}}
-const keys=[['2nd','second','science'],['sin','sin(','science'],['cos','cos(','science'],['tan','tan(','science'],['(', '(','science'],[')',')','science'],['x²','^2','science'],['ln','ln(','science'],['log','log(','science'],['√','sqrt(','science'],['AC','clear','clear'],['⌫','back','clear'],['xʸ','^','science'],['π','π','science'],['7','7'],['8','8'],['9','9'],['÷','÷','operator'],['x!','!','science'],['e','e','science'],['4','4'],['5','5'],['6','6'],['×','×','operator'],['1/x','reciprocal','science'],['%','%','science'],['1','1'],['2','2'],['3','3'],['−','−','operator'],['|x|','abs(','science'],['Ans','Ans','science'],['±','sign'],['0','0'],[',',','],['+','+','operator'],['sinh','sinh(','science'],['cosh','cosh(','science'],['tanh','tanh(','science'],['EXP','e','science'],['∛','cbrt(','science'],['=','equals','equals']];
-const inverse={sin:['sin⁻¹','asin('],cos:['cos⁻¹','acos('],tan:['tan⁻¹','atan('],ln:['eˣ','exp('],log:['10ˣ','10^('],sinh:['sinh⁻¹','asinh('],cosh:['cosh⁻¹','acosh('],tanh:['tanh⁻¹','atanh(']};
-function renderKeys(){$('keypad').replaceChildren();keys.forEach(([label,action,cls])=>{const button=document.createElement('button');const alt=second&&inverse[label];button.textContent=alt?alt[0]:label;button.className=cls||'';button.dataset.action=alt?alt[1]:action;if(action==='second'){button.classList.toggle('active',second);button.setAttribute('aria-pressed',second);}button.setAttribute('aria-label',({'⌫':'Apagar caractere','AC':'Limpar expressão','=':'Calcular','±':'Trocar sinal','EXP':'Expoente em notação científica'})[label]||button.textContent);button.addEventListener('click',()=>act(button.dataset.action));$('keypad').append(button);});}
-function act(action){if(action==='equals')return commit();if(action==='second'){second=!second;renderKeys();return;}if(action==='clear'){input.value='';input.focus();preview();return;}if(action==='back'){const start=input.selectionStart,end=input.selectionEnd;input.setRangeText('',start===end?Math.max(0,start-1):start,end,'end');input.focus();preview();return;}if(action==='sign'){input.value=input.value?`-(${input.value})`:'-';input.focus();preview();return;}if(action==='reciprocal'){input.value=input.value?`1/(${input.value})`:'1/(';input.focus();preview();return;}insert(action);}
-function renderHistory(){$('count').textContent=history.length;$('history').replaceChildren();if(!history.length){const empty=document.createElement('div');empty.className='empty';empty.innerHTML='<span class="empty-symbol">↺</span><strong>Uma nova conta começa aqui</strong><p>Seus resultados aparecem neste espaço. Toque em um para reutilizar.</p>';$('history').append(empty);return;}history.forEach(item=>{const b=document.createElement('button');b.className='history-item';const small=document.createElement('small'),expression=document.createElement('span'),result=document.createElement('strong');small.textContent=`${item.mode} · ${item.time}`;expression.textContent=item.expression;result.textContent='= '+format(item.value);b.append(small,expression,result);b.title='Reutilizar resultado';b.onclick=()=>insert(`(${item.value})`);$('history').append(b);});}
-function setMode(value){mode=value;for(const unit of ['DEG','RAD']){$(unit.toLowerCase()).classList.toggle('selected',mode===unit);$(unit.toLowerCase()).setAttribute('aria-pressed',mode===unit);}preview();}
-$('deg').onclick=()=>setMode('DEG');$('rad').onclick=()=>setMode('RAD');input.addEventListener('input',preview);
-document.addEventListener('keydown',event=>{if($('guide').open)return;if(event.key==='Escape'){event.preventDefault();act('clear');}else if(event.key==='Enter'&&(event.target===input||event.target===document.body)){event.preventDefault();commit();}else if(event.target===document.body&&/^[0-9+\-*/^().,%!]$/.test(event.key)){event.preventDefault();insert(event.key);}});
-document.querySelectorAll('.memory-row button').forEach(button=>button.onclick=()=>{try{const action=button.dataset.action;if(action==='mc'){memory=0;hasMemory=false;}else if(action==='mr'){insert(`(${memory})`);return;}else{const value=input.value?evaluate():ans;const next=action==='ms'?value:action==='mplus'?memory+value:memory-value;if(!Number.isFinite(next))throw Error('Memória fora do limite numérico.');memory=next;hasMemory=true;}$('memory-state').textContent=hasMemory?'M = '+format(memory):'MEMÓRIA VAZIA';}catch(e){$('status').textContent=e.message;$('status').className='error';}});
-$('clear-history').onclick=()=>{history=[];save();renderHistory();};$('theme').onclick=()=>{document.body.classList.toggle('dark');try{localStorage.setItem('forma-theme',document.body.classList.contains('dark')?'dark':'light');}catch{}};
-$('copy').onclick=async()=>{try{const value=input.value?evaluate():ans;await navigator.clipboard.writeText(format(value));$('status').textContent='Resultado copiado';$('status').className='';}catch{$('status').textContent='Não foi possível copiar. Selecione o resultado manualmente.';}};
-$('help').onclick=()=>$('guide').showModal();$('close-guide').onclick=()=>$('guide').close();renderKeys();renderHistory();
+// Controlador da calculadora científica: entrada, memória, histórico e preferências.
+import { calculate } from "./engine.js";
+const $ = (id) => document.getElementById(id),
+  input = $("expression");
+let mode = "DEG",
+  ans = 0,
+  memory = 0,
+  hasMemory = false,
+  second = false,
+  history = [];
+try {
+  history = JSON.parse(localStorage.getItem("forma-history") || "[]")
+    .filter(
+      (x) => x && typeof x.expression === "string" && Number.isFinite(x.value),
+    )
+    .slice(0, 50);
+  document.body.classList.toggle(
+    "dark",
+    localStorage.getItem("forma-theme") === "dark",
+  );
+} catch {
+  history = [];
+}
+const format = (n) =>
+  Number(n.toPrecision(12)).toLocaleString("pt-BR", {
+    maximumSignificantDigits: 12,
+    useGrouping: false,
+  });
+const save = () => {
+  try {
+    localStorage.setItem("forma-history", JSON.stringify(history));
+  } catch {}
+};
+function evaluate() {
+  return calculate(input.value, { mode, ans, memory });
+}
+function preview() {
+  try {
+    $("result").textContent = format(evaluate());
+    $("status").textContent = "Prévia do resultado";
+    $("status").className = "";
+  } catch {
+    $("result").textContent = input.value ? "—" : "0";
+    $("status").textContent = input.value
+      ? "Continue sua expressão"
+      : "Digite uma expressão para começar";
+    $("status").className = "";
+  }
+}
+function insert(text) {
+  const start = input.selectionStart,
+    end = input.selectionEnd;
+  input.setRangeText(text, start, end, "end");
+  input.focus();
+  preview();
+}
+function commit() {
+  try {
+    const expression = input.value,
+      value = evaluate();
+    ans = value;
+    $("result").textContent = format(value);
+    $("status").textContent = "Resultado calculado";
+    $("status").className = "";
+    history.unshift({
+      expression,
+      value,
+      mode,
+      time: new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+    });
+    history = history.slice(0, 50);
+    save();
+    renderHistory();
+  } catch (e) {
+    $("status").textContent = e.message;
+    $("status").className = "error";
+  }
+}
+const keys = [
+  ["2nd", "second", "science"],
+  ["sin", "sin(", "science"],
+  ["cos", "cos(", "science"],
+  ["tan", "tan(", "science"],
+  ["(", "(", "science"],
+  [")", ")", "science"],
+  ["x²", "^2", "science"],
+  ["ln", "ln(", "science"],
+  ["log", "log(", "science"],
+  ["√", "sqrt(", "science"],
+  ["AC", "clear", "clear"],
+  ["⌫", "back", "clear"],
+  ["xʸ", "^", "science"],
+  ["π", "π", "science"],
+  ["7", "7"],
+  ["8", "8"],
+  ["9", "9"],
+  ["÷", "÷", "operator"],
+  ["x!", "!", "science"],
+  ["e", "e", "science"],
+  ["4", "4"],
+  ["5", "5"],
+  ["6", "6"],
+  ["×", "×", "operator"],
+  ["1/x", "reciprocal", "science"],
+  ["%", "%", "science"],
+  ["1", "1"],
+  ["2", "2"],
+  ["3", "3"],
+  ["−", "−", "operator"],
+  ["|x|", "abs(", "science"],
+  ["Ans", "Ans", "science"],
+  ["±", "sign"],
+  ["0", "0"],
+  [",", ","],
+  ["+", "+", "operator"],
+  ["sinh", "sinh(", "science"],
+  ["cosh", "cosh(", "science"],
+  ["tanh", "tanh(", "science"],
+  ["EXP", "e", "science"],
+  ["∛", "cbrt(", "science"],
+  ["=", "equals", "equals"],
+];
+const inverse = {
+  sin: ["sin⁻¹", "asin("],
+  cos: ["cos⁻¹", "acos("],
+  tan: ["tan⁻¹", "atan("],
+  ln: ["eˣ", "exp("],
+  log: ["10ˣ", "10^("],
+  sinh: ["sinh⁻¹", "asinh("],
+  cosh: ["cosh⁻¹", "acosh("],
+  tanh: ["tanh⁻¹", "atanh("],
+};
+function renderKeys() {
+  $("keypad").replaceChildren();
+  keys.forEach(([label, action, cls]) => {
+    const button = document.createElement("button");
+    const alt = second && inverse[label];
+    button.textContent = alt ? alt[0] : label;
+    button.className = cls || "";
+    button.dataset.action = alt ? alt[1] : action;
+    if (action === "second") {
+      button.classList.toggle("active", second);
+      button.setAttribute("aria-pressed", second);
+    }
+    button.setAttribute(
+      "aria-label",
+      {
+        "⌫": "Apagar caractere",
+        AC: "Limpar expressão",
+        "=": "Calcular",
+        "±": "Trocar sinal",
+        EXP: "Expoente em notação científica",
+      }[label] || button.textContent,
+    );
+    button.addEventListener("click", () => act(button.dataset.action));
+    $("keypad").append(button);
+  });
+}
+function act(action) {
+  if (action === "equals") return commit();
+  if (action === "second") {
+    second = !second;
+    renderKeys();
+    return;
+  }
+  if (action === "clear") {
+    input.value = "";
+    input.focus();
+    preview();
+    return;
+  }
+  if (action === "back") {
+    const start = input.selectionStart,
+      end = input.selectionEnd;
+    input.setRangeText(
+      "",
+      start === end ? Math.max(0, start - 1) : start,
+      end,
+      "end",
+    );
+    input.focus();
+    preview();
+    return;
+  }
+  if (action === "sign") {
+    input.value = input.value ? `-(${input.value})` : "-";
+    input.focus();
+    preview();
+    return;
+  }
+  if (action === "reciprocal") {
+    input.value = input.value ? `1/(${input.value})` : "1/(";
+    input.focus();
+    preview();
+    return;
+  }
+  insert(action);
+}
+function renderHistory() {
+  $("count").textContent = history.length;
+  $("history").replaceChildren();
+  if (!history.length) {
+    const empty = document.createElement("div");
+    empty.className = "empty";
+    empty.innerHTML =
+      '<span class="empty-symbol">↺</span><strong>Uma nova conta começa aqui</strong><p>Seus resultados aparecem neste espaço. Toque em um para reutilizar.</p>';
+    $("history").append(empty);
+    return;
+  }
+  history.forEach((item) => {
+    const b = document.createElement("button");
+    b.className = "history-item";
+    const small = document.createElement("small"),
+      expression = document.createElement("span"),
+      result = document.createElement("strong");
+    small.textContent = `${item.mode} · ${item.time}`;
+    expression.textContent = item.expression;
+    result.textContent = "= " + format(item.value);
+    b.append(small, expression, result);
+    b.title = "Reutilizar resultado";
+    b.onclick = () => insert(`(${item.value})`);
+    $("history").append(b);
+  });
+}
+function setMode(value) {
+  mode = value;
+  for (const unit of ["DEG", "RAD"]) {
+    $(unit.toLowerCase()).classList.toggle("selected", mode === unit);
+    $(unit.toLowerCase()).setAttribute("aria-pressed", mode === unit);
+  }
+  preview();
+}
+// CE apaga a seleção ou o último token, preservando o restante da conta.
+$("clear-entry").onclick = () => {
+  const start = input.selectionStart,
+    end = input.selectionEnd;
+  if (start !== end) {
+    input.setRangeText("", start, end, "end");
+  } else {
+    const prefix = input.value.slice(0, start);
+    const token = prefix.match(
+      /(?:\d*\.\d+|\d+,?\d*)(?:[eE][+-]?\d+)?$|[a-zA-Z]+$|.$/,
+    );
+    input.setRangeText("", start - (token?.[0].length || 0), end, "end");
+  }
+  input.focus();
+  preview();
+};
+$("deg").onclick = () => setMode("DEG");
+$("rad").onclick = () => setMode("RAD");
+input.addEventListener("input", preview);
+document.addEventListener("keydown", (event) => {
+  if ($("guide").open || $("module-calculator").hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    act("clear");
+  } else if (
+    event.key === "Enter" &&
+    (event.target === input || event.target === document.body)
+  ) {
+    event.preventDefault();
+    commit();
+  } else if (
+    event.target === document.body &&
+    /^[0-9+\-*/^().,%!]$/.test(event.key)
+  ) {
+    event.preventDefault();
+    insert(event.key);
+  }
+});
+document.querySelectorAll(".memory-row button").forEach(
+  (button) =>
+    (button.onclick = () => {
+      try {
+        const action = button.dataset.action;
+        if (action === "mc") {
+          memory = 0;
+          hasMemory = false;
+        } else if (action === "mr") {
+          insert(`(${memory})`);
+          return;
+        } else {
+          const value = input.value ? evaluate() : ans;
+          const next =
+            action === "ms"
+              ? value
+              : action === "mplus"
+                ? memory + value
+                : memory - value;
+          if (!Number.isFinite(next))
+            throw Error("Memória fora do limite numérico.");
+          memory = next;
+          hasMemory = true;
+        }
+        $("memory-state").textContent = hasMemory
+          ? "M = " + format(memory)
+          : "MEMÓRIA VAZIA";
+      } catch (e) {
+        $("status").textContent = e.message;
+        $("status").className = "error";
+      }
+    }),
+);
+$("clear-history").onclick = () => {
+  history = [];
+  save();
+  renderHistory();
+};
+$("theme").onclick = () => {
+  document.body.classList.toggle("dark");
+  try {
+    localStorage.setItem(
+      "forma-theme",
+      document.body.classList.contains("dark") ? "dark" : "light",
+    );
+  } catch {}
+};
+$("copy").onclick = async () => {
+  try {
+    const value = input.value ? evaluate() : ans;
+    await navigator.clipboard.writeText(format(value));
+    $("status").textContent = "Resultado copiado";
+    $("status").className = "";
+  } catch {
+    $("status").textContent =
+      "Não foi possível copiar. Selecione o resultado manualmente.";
+  }
+};
+$("help").onclick = () => $("guide").showModal();
+$("close-guide").onclick = () => $("guide").close();
+renderKeys();
+renderHistory();

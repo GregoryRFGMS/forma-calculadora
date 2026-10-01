@@ -1,10 +1,488 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#f5f6f8"><meta name="description" content="Calculadora científica com trigonometria, memória e histórico. Simples, gratuita e sem dependências."><title>Forma — Calculadora científica</title><link rel="stylesheet" href="./style.css"></head><body>
-<header><a class="brand" href="./" aria-label="Forma início"><span class="brand-icon">ƒ</span> forma<span class="brand-period">.</span></a><div class="header-right"><span>CALCULADORA CIENTÍFICA</span><button id="theme" class="icon" aria-label="Alternar tema">◐</button></div></header>
-<main><div class="intro"><div><p class="eyebrow">ESPAÇO PARA PENSAR</p><h1>Todo cálculo, <span>com clareza.</span></h1></div><span class="version">SC / 01</span></div>
-<div class="workspace"><section class="calculator" aria-label="Calculadora científica"><div class="toolbar"><span class="label">Científica</span><div class="segment" aria-label="Unidade angular"><button id="deg" class="selected" aria-pressed="true">DEG</button><button id="rad" aria-pressed="false">RAD</button></div></div>
-<div class="screen"><div class="screen-meta"><span id="memory-state">MEMÓRIA VAZIA</span><button id="copy" class="text-button">Copiar resultado</button></div><label class="sr-only" for="expression">Expressão matemática</label><input id="expression" autocomplete="off" spellcheck="false" placeholder="0" aria-describedby="status"><output id="result" aria-live="polite">0</output><p id="status">Digite uma expressão para começar</p></div>
-<div class="memory-row"><button data-action="mc" title="Limpar memória">MC</button><button data-action="mr" title="Recuperar memória">MR</button><button data-action="ms" title="Salvar na memória">MS</button><button data-action="mplus" title="Somar à memória">M+</button><button data-action="mminus" title="Subtrair da memória">M−</button></div>
-<div class="keypad" id="keypad"></div><div class="calculator-footer"><span><kbd>enter</kbd> calcular</span><span><kbd>esc</kbd> limpar</span><button id="help" class="text-button">Guia de funções</button></div></section>
-<aside><div class="history-heading"><h2>Histórico <span id="count">0</span></h2><button id="clear-history" class="text-button">Limpar</button></div><div id="history"></div><div class="history-note">Seus cálculos ficam apenas neste navegador.</div></aside></div>
-<footer><span>Menos distrações. Mais precisão.</span><span>FEITO PARA O SEU RACIOCÍNIO</span></footer></main>
-<dialog id="guide"><div class="history-heading"><h2>Guia de funções</h2><button id="close-guide" class="icon" aria-label="Fechar guia">×</button></div><p>Use DEG para graus e RAD para radianos. A tecla 2nd alterna para funções inversas.</p><dl><dt>Potências e raízes</dt><dd>2^3, sqrt(9), cbrt(27). Potências são calculadas antes do sinal negativo: −2² = −4.</dd><dt>Trigonometria</dt><dd>sin, cos, tan; asin, acos, atan; sinh, cosh, tanh e suas inversas.</dd><dt>Logaritmos</dt><dd>log(x) usa base 10; ln(x), base e. Para outra base: ln(x)/ln(base).</dd><dt>Porcentagem</dt><dd>x% = x/100. Para adicionar 10% a 200, use 200×(1+10%).</dd><dt>Memória e resposta</dt><dd>MS salva; MR recupera; MC limpa; M+ e M− acumulam. Ans recupera o último resultado.</dd><dt>Expressões</dt><dd>Use ponto ou vírgula decimal, parênteses, π, e e notação como 1e-6. A multiplicação implícita é aceita: 2π e 2(3+4).</dd></dl><p class="note">Cálculos com números reais e precisão de ponto flutuante. Resultados exibidos com até 12 algarismos significativos.</p></dialog><script type="module" src="./app.js"></script></body></html>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f6f8" />
+    <meta
+      name="description"
+      content="Calculadora científica com trigonometria, memória e histórico. Simples, gratuita e sem dependências."
+    />
+    <title>Forma — Calculadora científica</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="./" aria-label="Forma início"
+        ><span class="brand-icon">ƒ</span> forma<span class="brand-period"
+          >.</span
+        ></a
+      >
+      <div class="header-right">
+        <span>CALCULADORA CIENTÍFICA</span
+        ><button id="theme" class="icon" aria-label="Alternar tema">◐</button>
+      </div>
+    </header>
+    <main>
+      <div class="intro">
+        <div>
+          <p class="eyebrow">ESPAÇO PARA PENSAR</p>
+          <h1>Todo cálculo, <span>com clareza.</span></h1>
+        </div>
+        <span class="version">SC / 02</span>
+      </div>
+      <nav class="module-nav" aria-label="Módulos da calculadora">
+        <button
+          data-module="calculator"
+          aria-controls="module-calculator"
+          aria-pressed="true"
+        >
+          Calculadora
+        </button>
+        <button
+          data-module="functions"
+          aria-controls="module-functions"
+          aria-pressed="false"
+        >
+          Funções
+        </button>
+        <button
+          data-module="matrices"
+          aria-controls="module-matrices"
+          aria-pressed="false"
+        >
+          Matrizes
+        </button>
+        <button
+          data-module="combinatorics"
+          aria-controls="module-combinatorics"
+          aria-pressed="false"
+        >
+          Combinatória
+        </button>
+        <button
+          data-module="bases"
+          aria-controls="module-bases"
+          aria-pressed="false"
+        >
+          Bases
+        </button>
+      </nav>
+      <div id="module-calculator" class="workspace">
+        <section class="calculator" aria-label="Calculadora científica">
+          <div class="toolbar">
+            <div class="toolbar-start">
+              <span class="label">Científica</span
+              ><button
+                id="clear-entry"
+                class="text-button"
+                title="Apagar o último número ou símbolo da expressão"
+              >
+                CE · limpar entrada
+              </button>
+            </div>
+            <div class="segment" aria-label="Unidade angular">
+              <button id="deg" class="selected" aria-pressed="true">DEG</button
+              ><button id="rad" aria-pressed="false">RAD</button>
+            </div>
+          </div>
+          <div class="screen">
+            <div class="screen-meta">
+              <span id="memory-state">MEMÓRIA VAZIA</span
+              ><button id="copy" class="text-button">Copiar resultado</button>
+            </div>
+            <label class="sr-only" for="expression">Expressão matemática</label
+            ><input
+              id="expression"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="0"
+              aria-describedby="status"
+            /><output id="result" aria-live="polite">0</output>
+            <p id="status">Digite uma expressão para começar</p>
+          </div>
+          <div class="memory-row">
+            <button data-action="mc" title="Limpar memória">MC</button
+            ><button data-action="mr" title="Recuperar memória">MR</button
+            ><button data-action="ms" title="Salvar na memória">MS</button
+            ><button data-action="mplus" title="Somar à memória">M+</button
+            ><button data-action="mminus" title="Subtrair da memória">
+              M−
+            </button>
+          </div>
+          <div class="keypad" id="keypad"></div>
+          <div class="calculator-footer">
+            <span><kbd>enter</kbd> calcular</span
+            ><span><kbd>esc</kbd> limpar</span
+            ><button id="help" class="text-button">Guia de funções</button>
+          </div>
+        </section>
+        <aside>
+          <div class="history-heading">
+            <h2>Histórico <span id="count">0</span></h2>
+            <button id="clear-history" class="text-button">Limpar</button>
+          </div>
+          <div id="history"></div>
+          <div class="history-note">
+            Seus cálculos ficam apenas neste navegador.
+          </div>
+        </aside>
+      </div>
+
+      <section
+        id="module-functions"
+        class="module-panel"
+        aria-label="Funções"
+        hidden
+      >
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">01 / FUNÇÕES</p>
+            <h2>Uma expressão, muitos valores.</h2>
+          </div>
+          <span class="module-badge">f(x)</span>
+        </div>
+        <div class="module-columns">
+          <div class="module-card">
+            <h3>Avaliar função</h3>
+            <form id="function-form" novalidate>
+              <label for="function-expression">Expressão f(x)</label>
+              <input
+                id="function-expression"
+                value="x² − 4"
+                spellcheck="false"
+                autocomplete="off"
+                aria-describedby="function-hint"
+              />
+              <p id="function-hint" class="field-hint">
+                Ex.: 2x² + 3x − 1, sen(x), raiz(x). Use ^ para potências.
+              </p>
+              <div class="field-row">
+                <div>
+                  <label for="function-x">Valor de x</label
+                  ><input id="function-x" value="3" inputmode="decimal" />
+                </div>
+                <div>
+                  <label for="function-mode">Ângulos</label
+                  ><select id="function-mode">
+                    <option value="DEG">Graus (DEG)</option>
+                    <option value="RAD">Radianos (RAD)</option>
+                  </select>
+                </div>
+              </div>
+              <button class="primary" type="submit">Calcular f(x)</button>
+            </form>
+            <output id="function-result" class="big-result" aria-live="polite"
+              >—</output
+            >
+            <p id="function-status" class="module-status" role="status"></p>
+          </div>
+          <div class="module-card">
+            <h3>Tabela de valores</h3>
+            <form id="table-form" novalidate>
+              <div class="field-row three">
+                <div>
+                  <label for="range-start">Início</label
+                  ><input id="range-start" value="-2" inputmode="decimal" />
+                </div>
+                <div>
+                  <label for="range-end">Fim</label
+                  ><input id="range-end" value="2" inputmode="decimal" />
+                </div>
+                <div>
+                  <label for="range-step">Passo</label
+                  ><input id="range-step" value="1" inputmode="decimal" />
+                </div>
+              </div>
+              <p class="field-hint">
+                Usa a mesma expressão e unidade angular. Até 501 pontos.
+              </p>
+              <button class="primary" type="submit">Gerar tabela</button>
+            </form>
+            <p id="table-status" class="module-status" role="status">
+              Defina o intervalo e gere a tabela.
+            </p>
+            <div class="table-scroll">
+              <table class="values-table">
+                <caption class="sr-only">
+                  Valores da função no intervalo informado
+                </caption>
+                <thead>
+                  <tr>
+                    <th scope="col">x</th>
+                    <th scope="col">f(x)</th>
+                  </tr>
+                </thead>
+                <tbody id="function-table"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section
+        id="module-matrices"
+        class="module-panel"
+        aria-label="Matrizes"
+        hidden
+      >
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">02 / MATRIZES</p>
+            <h2>Organize. Transforme. Resolva.</h2>
+          </div>
+          <span class="module-badge">[ A ]</span>
+        </div>
+        <p class="module-intro">
+          Matrizes de 1×1 a 10×10. O determinante, a transposta e o escalar usam
+          a matriz A.
+        </p>
+        <div class="module-columns">
+          <div class="module-card">
+            <h3>Matriz A</h3>
+            <div class="field-row">
+              <div>
+                <label for="a-rows">Linhas de A</label
+                ><select id="a-rows"></select>
+              </div>
+              <div>
+                <label for="a-columns">Colunas de A</label
+                ><select id="a-columns"></select>
+              </div>
+            </div>
+            <div class="matrix-scroll">
+              <div
+                id="matrix-a"
+                class="matrix-grid"
+                aria-label="Valores da matriz A"
+              ></div>
+            </div>
+          </div>
+          <div class="module-card">
+            <h3>Matriz B</h3>
+            <div class="field-row">
+              <div>
+                <label for="b-rows">Linhas de B</label
+                ><select id="b-rows"></select>
+              </div>
+              <div>
+                <label for="b-columns">Colunas de B</label
+                ><select id="b-columns"></select>
+              </div>
+            </div>
+            <div class="matrix-scroll">
+              <div
+                id="matrix-b"
+                class="matrix-grid"
+                aria-label="Valores da matriz B"
+              ></div>
+            </div>
+          </div>
+        </div>
+        <div class="module-card matrix-actions">
+          <div class="operation-buttons">
+            <button data-matrix-operation="add">A + B</button
+            ><button data-matrix-operation="subtract">A − B</button
+            ><button data-matrix-operation="multiply">A × B</button
+            ><button data-matrix-operation="transpose">Transposta de A</button
+            ><button data-matrix-operation="determinant">
+              Determinante de A
+            </button>
+          </div>
+          <div class="scalar-control">
+            <label for="matrix-scalar">Escalar k</label
+            ><input id="matrix-scalar" value="2" inputmode="decimal" /><button
+              data-matrix-operation="scale"
+            >
+              k × A
+            </button>
+          </div>
+        </div>
+        <div class="module-card">
+          <h3>Resultado</h3>
+          <p id="matrix-status" class="module-status" role="status"></p>
+          <div
+            id="matrix-result"
+            class="matrix-scroll"
+            aria-live="polite"
+          ></div>
+          <p class="field-hint">
+            Resultados reais aproximados, exibidos com até 12 algarismos
+            significativos. Matrizes próximas de singulares podem acumular erro
+            numérico.
+          </p>
+        </div>
+      </section>
+      <section
+        id="module-combinatorics"
+        class="module-panel"
+        aria-label="Análise combinatória"
+        hidden
+      >
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">03 / ANÁLISE COMBINATÓRIA</p>
+            <h2>Conte todas as possibilidades.</h2>
+          </div>
+          <span class="module-badge">n!</span>
+        </div>
+        <div class="module-columns">
+          <div class="module-card">
+            <h3>Configurar cálculo</h3>
+            <form id="combo-form" novalidate>
+              <label for="combo-operation">Operação</label
+              ><select id="combo-operation">
+                <option value="combination">Combinação — C(n,k)</option>
+                <option value="arrangement">Arranjo — A(n,k)</option>
+                <option value="permutation">Permutação simples — P(n)</option>
+                <option value="repeated">Permutação com repetição</option>
+                <option value="factorial">Fatorial — n!</option>
+              </select>
+              <div class="field-row">
+                <div>
+                  <label for="combo-n">Total de elementos (n)</label
+                  ><input id="combo-n" value="10" inputmode="numeric" />
+                </div>
+                <div id="combo-k-field">
+                  <label for="combo-k">Elementos escolhidos (k)</label
+                  ><input id="combo-k" value="3" inputmode="numeric" />
+                </div>
+              </div>
+              <div id="combo-groups-field" hidden>
+                <label for="combo-groups"
+                  >Quantidades dos grupos repetidos</label
+                ><input
+                  id="combo-groups"
+                  value="2, 2, 1"
+                  aria-describedby="groups-hint"
+                />
+                <p class="field-hint" id="groups-hint">
+                  Ex.: para ARARA, n = 5 e grupos = 3, 2. Inclua grupos de
+                  tamanho 1 quando houver.
+                </p>
+              </div>
+              <p class="field-hint">
+                Inteiros de 0 a 5.000. Para arranjos e combinações, k ≤ n.
+              </p>
+              <button class="primary" type="submit">Calcular contagem</button>
+            </form>
+          </div>
+          <div class="module-card">
+            <h3>Resultado exato</h3>
+            <p class="formula" id="combo-formula"></p>
+            <p class="module-intro" id="combo-description"></p>
+            <output id="combo-result" class="exact-result" aria-live="polite"
+              >—</output
+            >
+            <p id="combo-status" class="module-status" role="status"></p>
+            <p class="field-hint">
+              Aritmética inteira com BigInt: todos os dígitos são preservados,
+              inclusive para fatoriais maiores que 170!.
+            </p>
+          </div>
+        </div>
+      </section>
+      <section
+        id="module-bases"
+        class="module-panel"
+        aria-label="Conversão de bases"
+        hidden
+      >
+        <div class="module-heading">
+          <div>
+            <p class="eyebrow">04 / CONVERSÃO DE BASES</p>
+            <h2>O mesmo número, outra base.</h2>
+          </div>
+          <span class="module-badge">01</span>
+        </div>
+        <div class="module-columns">
+          <div class="module-card">
+            <h3>Converter inteiro</h3>
+            <form id="bases-form" novalidate>
+              <label for="base-source">Base de origem</label
+              ><select id="base-source">
+                <option value="10">Decimal — base 10</option>
+                <option value="2">Binário — base 2</option>
+                <option value="8">Octal — base 8</option>
+                <option value="16">Hexadecimal — base 16</option></select
+              ><label for="base-number">Número</label
+              ><input
+                id="base-number"
+                value="255"
+                spellcheck="false"
+                autocomplete="off"
+              />
+              <p class="field-hint">
+                Até 1.024 dígitos. Aceita sinal + ou −. Sem frações, separadores
+                ou prefixos 0x/0b. No hexadecimal, use A–F.
+              </p>
+              <button class="primary" type="submit">Converter bases</button>
+            </form>
+          </div>
+          <div class="module-card">
+            <h3>Representações equivalentes</h3>
+            <div id="bases-result" aria-live="polite"></div>
+            <p id="bases-status" class="module-status" role="status">
+              Insira um inteiro e converta para as quatro bases.
+            </p>
+          </div>
+        </div>
+      </section>
+      <footer>
+        <span>Menos distrações. Mais precisão.</span
+        ><span>FEITO PARA O SEU RACIOCÍNIO</span>
+      </footer>
+    </main>
+    <dialog id="guide">
+      <div class="history-heading">
+        <h2>Guia de funções</h2>
+        <button id="close-guide" class="icon" aria-label="Fechar guia">
+          ×
+        </button>
+      </div>
+      <p>
+        Os módulos Funções, Matrizes, Combinatória e Bases estão disponíveis na
+        navegação principal. Use DEG para graus e RAD para radianos. A tecla 2nd
+        alterna para funções inversas.
+      </p>
+      <dl>
+        <dt>Potências e raízes</dt>
+        <dd>
+          2^3, sqrt(9), cbrt(27). Potências são calculadas antes do sinal
+          negativo: −2² = −4.
+        </dd>
+        <dt>Trigonometria</dt>
+        <dd>
+          sin, cos, tan; asin, acos, atan; sinh, cosh, tanh e suas inversas.
+        </dd>
+        <dt>Logaritmos</dt>
+        <dd>
+          log(x) usa base 10; ln(x), base e. Para outra base: ln(x)/ln(base).
+        </dd>
+        <dt>Porcentagem</dt>
+        <dd>x% = x/100. Para adicionar 10% a 200, use 200×(1+10%).</dd>
+        <dt>Memória e resposta</dt>
+        <dd>
+          MS salva; MR recupera; MC limpa; M+ e M− acumulam. Ans recupera o
+          último resultado.
+        </dd>
+        <dt>Limpar entrada (CE)</dt>
+        <dd>
+          Apaga o último número, nome de função ou símbolo. Se houver texto
+          selecionado, apaga apenas a seleção. AC limpa toda a expressão.
+        </dd>
+        <dt>Expressões</dt>
+        <dd>
+          Use ponto ou vírgula decimal, parênteses, π, e e notação como 1e-6.
+          Também aceita sen, tg, raiz, ² e ³. A multiplicação implícita é
+          aceita: 2π e 2(3+4).
+        </dd>
+      </dl>
+      <p class="note">
+        Cálculos com números reais e precisão de ponto flutuante. Resultados
+        exibidos com até 12 algarismos significativos.
+      </p>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+    <script type="module" src="./modules-ui.js"></script>
+  </body>
+</html>
