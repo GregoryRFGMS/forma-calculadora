@@ -1,5 +1,5 @@
 import { evaluateFunction, functionTable } from './functions.js?v=2';
-import { evaluateFunction, functionTable } from "./functions.js";
+
 import {
   addMatrices,
   scaleMatrix,
