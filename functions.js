@@ -1,5 +1,5 @@
 /** Avaliação de f(x) e amostragem em intervalo, independentes da interface. */
-import { compile } from "./engine.js";
+import { compile } from "./engine.js?v=2";
 
 export function evaluateFunction(expression, x, mode = "DEG") {
   if (!Number.isFinite(x)) throw Error("Informe um valor finito para x.");
