@@ -1,4 +1,4 @@
-/** Controladores dos módulos. As funções matemáticas ficam em arquivos próprios. */
+import { evaluateFunction, functionTable } from './functions.js?v=2';
 import { evaluateFunction, functionTable } from "./functions.js";
 import {
   addMatrices,
